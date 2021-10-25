@@ -5,39 +5,60 @@ import java.awt.event.KeyEvent;
 
 import com.anish.calabashbros.BubbleSorter;
 import com.anish.calabashbros.Calabash;
+import com.anish.calabashbros.RandomSort;
 import com.anish.calabashbros.World;
 
 import asciiPanel.AsciiPanel;
 
+import java.util.Random;
+
 public class WorldScreen implements Screen {
 
     private World world;
-    private Calabash[] bros;
+    private Calabash[][] monsters;
     String[] sortSteps;
+    private final int num = 8;
+    private final int total = 64;
 
     public WorldScreen() {
         world = new World();
 
-        bros = new Calabash[7];
+        int randomPos[] = new int[total];
+        for (int i = 0; i < total; i++) {
+            randomPos[i] = i;
+        }
+        RandomSort randomSort = new RandomSort();
+        randomSort.getRandom(randomPos, 100, total);
 
-        bros[3] = new Calabash(new Color(204, 0, 0), 1, world);
-        bros[5] = new Calabash(new Color(255, 165, 0), 2, world);
-        bros[1] = new Calabash(new Color(252, 233, 79), 3, world);
-        bros[0] = new Calabash(new Color(78, 154, 6), 4, world);
-        bros[4] = new Calabash(new Color(50, 175, 255), 5, world);
-        bros[6] = new Calabash(new Color(114, 159, 207), 6, world);
-        bros[2] = new Calabash(new Color(173, 127, 168), 7, world);
-
-        world.put(bros[0], 10, 10);
-        world.put(bros[1], 12, 10);
-        world.put(bros[2], 14, 10);
-        world.put(bros[3], 16, 10);
-        world.put(bros[4], 18, 10);
-        world.put(bros[5], 20, 10);
-        world.put(bros[6], 22, 10);
+        monsters = new Calabash[num][num];
+        for (int i = 0; i < num; i++) {
+            for (int j = 0; j < num; j++) {
+                Random random = new Random();
+                int rank = i * num + j + 1;
+                int r, g, b;
+                if (rank < 22) {
+                    r = 255 - rank * 2;
+                    g = random.nextInt(50) + 100;
+                    b = random.nextInt(50) + 100;
+                } else if (rank < 44) {
+                    r = random.nextInt(50) + 100;
+                    g = 255 - (rank - 22) * 2;
+                    b = random.nextInt(50) + 100;
+                } else {
+                    r = random.nextInt(50) + 100;
+                    g = random.nextInt(50) + 100;
+                    b = 255 - (rank - 43) * 2;
+                }
+                int posi=randomPos[rank - 1] / num;
+                int posj=randomPos[rank - 1] % num;
+                monsters[posi][posj] = new Calabash(
+                        new Color(r, g, b), rank, world);
+                world.put(monsters[posi][posj], 10 + posj * 2, 10 + posi * 2);
+            }
+        }
 
         BubbleSorter<Calabash> b = new BubbleSorter<>();
-        b.load(bros);
+        b.load(monsters);
         b.sort();
 
         sortSteps = this.parsePlan(b.getPlan());
@@ -47,15 +68,17 @@ public class WorldScreen implements Screen {
         return plan.split("\n");
     }
 
-    private void execute(Calabash[] bros, String step) {
+    private void execute(Calabash[][] bros, String step) {
         String[] couple = step.split("<->");
         getBroByRank(bros, Integer.parseInt(couple[0])).swap(getBroByRank(bros, Integer.parseInt(couple[1])));
     }
 
-    private Calabash getBroByRank(Calabash[] bros, int rank) {
-        for (Calabash bro : bros) {
-            if (bro.getRank() == rank) {
-                return bro;
+    private Calabash getBroByRank(Calabash[][] bros, int rank) {
+        for (Calabash[] broline : bros) {
+            for (Calabash bro : broline) {
+                if (bro.getRank() == rank) {
+                    return bro;
+                }
             }
         }
         return null;
@@ -79,7 +102,7 @@ public class WorldScreen implements Screen {
     public Screen respondToUserInput(KeyEvent key) {
 
         if (i < this.sortSteps.length) {
-            this.execute(bros, sortSteps[i]);
+            this.execute(monsters, sortSteps[i]);
             i++;
         }
 
