@@ -3,65 +3,25 @@ package com.anish.screen;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 
-import com.anish.calabashbros.BubbleSorter;
-import com.anish.calabashbros.Calabash;
-import com.anish.calabashbros.RandomSort;
-import com.anish.calabashbros.World;
+import com.anish.calabashbros.*;
 
 import asciiPanel.AsciiPanel;
+import com.anish.maze.Node;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 public class WorldScreen implements Screen {
 
     private World world;
-    private Calabash[][] monsters;
-    String[] sortSteps;
-    private final int num = 8;
-    private final int total = 64;
+    private int[][] maze;
+    private Calabash character;
 
     public WorldScreen() {
         world = new World();
-
-        int randomPos[] = new int[total];
-        for (int i = 0; i < total; i++) {
-            randomPos[i] = i;
-        }
-        RandomSort randomSort = new RandomSort();
-        randomSort.getRandom(randomPos, 100, total);
-
-        monsters = new Calabash[num][num];
-        for (int i = 0; i < num; i++) {
-            for (int j = 0; j < num; j++) {
-                Random random = new Random();
-                int rank = i * num + j + 1;
-                int r, g, b;
-                if (rank < 22) {
-                    r = 255 - rank * 2;
-                    g = random.nextInt(50) + 100;
-                    b = random.nextInt(50) + 100;
-                } else if (rank < 44) {
-                    r = random.nextInt(50) + 100;
-                    g = 255 - (rank - 22) * 2;
-                    b = random.nextInt(50) + 100;
-                } else {
-                    r = random.nextInt(50) + 100;
-                    g = random.nextInt(50) + 100;
-                    b = 255 - (rank - 43) * 2;
-                }
-                int posi=randomPos[rank - 1] / num;
-                int posj=randomPos[rank - 1] % num;
-                monsters[posi][posj] = new Calabash(
-                        new Color(r, g, b), rank, world);
-                world.put(monsters[posi][posj], 10 + posj * 2, 10 + posi * 2);
-            }
-        }
-
-        BubbleSorter<Calabash> b = new BubbleSorter<>();
-        b.load(monsters);
-        b.sort();
-
-        sortSteps = this.parsePlan(b.getPlan());
+        maze = world.getMaze();
+        character = new Calabash(new Color(255, 255, 255), 0, world);
+        world.put(character, 0, 0);
     }
 
     private String[] parsePlan(String plan) {
@@ -96,16 +56,46 @@ public class WorldScreen implements Screen {
         }
     }
 
-    int i = 0;
-
     @Override
     public Screen respondToUserInput(KeyEvent key) {
-
-        if (i < this.sortSteps.length) {
-            this.execute(monsters, sortSteps[i]);
-            i++;
+        int x = character.getX();
+        int y = character.getY();
+        int[][] maze = world.getMaze();
+        ArrayList<Node> path = new ArrayList<Node>();
+        if (key.getKeyCode() == KeyEvent.VK_UP) {
+            if (y > 0 && maze[x][y - 1] == 1) {
+                world.put(new Calabash(new Color(100, 100, 100), 0, world), x, y);
+                character.moveTo(x, y - 1);
+            }
+        } else if (key.getKeyCode() == KeyEvent.VK_DOWN) {
+            if (y < 29 && maze[x][y + 1] == 1) {
+                world.put(new Calabash(new Color(100, 100, 100), 0, world), x, y);
+                character.moveTo(x, y + 1);
+            }
+        } else if (key.getKeyCode() == KeyEvent.VK_RIGHT) {
+            if (x < 29 && maze[x + 1][y] == 1) {
+                world.put(new Calabash(new Color(100, 100, 100), 0, world), x, y);
+                character.moveTo(x + 1, y);
+            }
+        } else if (key.getKeyCode() == KeyEvent.VK_LEFT) {
+            if (x > 0 && maze[x - 1][y] == 1) {
+                world.put(new Calabash(new Color(100, 100, 100), 0, world), x, y);
+                character.moveTo(x - 1, y);
+            }
+        } else if (key.getKeyCode() == KeyEvent.VK_ENTER) {
+            AutoFind autoFind = new AutoFind();
+            autoFind.init(world.getTiles());
+            autoFind.find(x, y);
+            path = autoFind.getPath();
+            world.put(new Calabash(new Color(100, 100, 100), 0, world), x, y);
+            for (int i = 0; i < path.size(); i++) {
+                character.moveTo(path.get(i).x, path.get(i).y);
+                if (i < path.size() - 1) {
+                    world.put(new Calabash(new Color(100, 100, 100), 0, world), path.get(i).x,
+                            path.get(i).y);
+                }
+            }
         }
-
         return this;
     }
 

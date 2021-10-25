@@ -32,4 +32,6 @@ public class Calabash extends Creature implements Comparable<Calabash> {
         another.moveTo(x, y);
     }
 
+
+
 }
